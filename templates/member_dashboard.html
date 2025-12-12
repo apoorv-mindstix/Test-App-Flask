@@ -4,7 +4,45 @@
 
 {% block content %}
     
-    <h3> Hello Member, {{ current_user.name }}</h3>
+    <h3> Hello Member, {{ member.name }}</h3>
     <a href = "{{ url_for('logout')}}">logout</a>
+    
+    <br>
+    <br>
+    {% if appointments|length < 1 %}    
 
+    <p style="text-align: center">There are no Slots added. Create one below!</p>
+
+    {% else %}
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Doctor</th>
+            <th>Member</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Delete</th>
+        </tr>
+
+        {% for slot in appointments %}
+        <tr>
+            <td>{{ slot.uid }}</td>
+            <td>{{ slot.date }}</td>
+            <td>{{ slot.doctor.name }}</td>
+            <td>{{ slot.member.name }}</td>
+            <td>{{ slot.start_time }}</td>
+            <td>{{ slot.end_time }}</td>
+            <td><a href="/delete/appointment/{{slot.uid}}">Delete</a><br></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% endif %}
+
+    <br>
+    <br>
+
+    <a href = "{{ url_for('add_appointment', member_id = member.uid)}}">Book Appointment</a><br><br>
 {% endblock %}

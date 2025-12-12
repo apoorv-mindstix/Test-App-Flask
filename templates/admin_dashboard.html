@@ -42,7 +42,6 @@
     {% endif %}
 
     <br>
-    <br>
     <h1 style="text-align: start">Doctors</h1>
 
     {% if doctors|length < 1 %}
@@ -63,6 +62,39 @@
             <td>{{ doc.uid }}</td>
             <td>{{ doc.name }}</td>
             <td><a href="/delete/doctor/{{doc.uid}}">Delete</a><br></td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <br>
+    <h1 style="text-align: start">Appointments</h1>
+
+    {% if appointments|length < 1 %}
+
+    <p style="text-align: center">There are no appointments!</p>
+
+    {% else %}
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Doctor</th>
+            <th>Member</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Delete</th>
+        </tr>
+
+        {% for slot in appointments %}
+        <tr>
+            <td>{{ slot.uid }}</td>
+            <td>{{ slot.date }}</td>
+            <td>{{ slot.doctor.name }}</td>
+            <td>{{ slot.member.name }}</td>
+            <td>{{ slot.start_time }}</td>
+            <td>{{ slot.end_time }}</td>
+            <td><a href="/delete/appointment/{{slot.uid}}">Delete</a><br></td>
         </tr>
         {% endfor %}
     </table>

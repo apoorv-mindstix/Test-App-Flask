@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %} Appointment {% endblock %}
+
+{% block content %}
+    
+    <h1>Add Appointment</h1>
+    <form action="{{ url_for('add_appointment', member_id = member_id) }}" method="POST">
+        <h2>Book a Slot</h2>
+
+        <label for="doctor">Select Doctor</label><br>
+        <select name="doctor_id">
+            <option value="">-- No Doctor Assigned --</option>
+            {% for doc in doctors %}
+                <option value="{{ doc.uid }}">{{ doc.name }}</option>
+            {% endfor %}
+        </select>
+
+        <br>
+        <br>
+
+        <label for="date">Choose Date:</label>
+        <input type="date" id="date" name="date" required>
+
+        <br>
+
+        <label for="start_time">Choose Start Time:</label>
+        <input type="time" id="start_time" name="start_time" required>
+
+        <br>
+
+        <label for="end_time">Choose End Time:</label>
+        <input type="time" id="end_time" name="end_time" required>
+       
+        <br>
+
+        <input type="submit" value="Book Appointment"><br>
+    </form>
+
+{% endblock %}

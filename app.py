@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 
 db = SQLAlchemy()
@@ -18,5 +19,7 @@ def create_app():
 
     from routes import register_route
     register_route(app = app, db = db, bcrypt = bcrypt)
+
+    migrate = Migrate(app, db)
 
     return app

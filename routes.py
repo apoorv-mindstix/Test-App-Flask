@@ -4,7 +4,7 @@ from flask_login import login_user, logout_user, current_user, login_required, L
 from functools import wraps
 from datetime import datetime, timezone, timedelta
 
-from models import User, Department
+from models import User, Department, Availability, Appointment
 
 # def register_route(app, db):
 #     @app.route('/', methods=['POST', 'GET'])
@@ -145,17 +145,35 @@ def register_route(app, db, bcrypt):
         if current_user.role == 'admin':
             departments = Department.query.all()
             doctors = User.query.filter(User.role == 'doctor').all()
+            appointments = Appointment.query.filter().all()
 
             return render_template(
                 'admin_dashboard.html', 
                 current_user = current_user, 
                 departments = departments,
-                doctors = doctors
+                doctors = doctors,
+                appointments = appointments
             )
         elif current_user.role == 'doctor':
-            return render_template('doctor_dashboard.html', current_user = current_user)
+            doctor = User.query.filter(User.uid == current_user.uid).first()
+            available_slots = Availability.query.filter(Availability.doctor_id == current_user.uid).all()
+            appointments = Appointment.query.filter(Appointment.doctor_id == current_user.uid).all()
+
+            return render_template(
+                'doctor_dashboard.html', 
+                doctor = doctor,
+                available_slots = available_slots,
+                appointments = appointments,
+            )
         else:
-            return render_template('member_dashboard.html', current_user = current_user) 
+            member = User.query.filter(User.uid == current_user.uid).first()
+            appointments = Appointment.query.filter(Appointment.member_id == current_user.uid).all()
+
+            return render_template(
+                'member_dashboard.html', 
+                member = member,
+                appointments = appointments
+            )
     
     # DEPARTMENT 
     @app.route('/add_department', methods=['POST', 'GET'])
@@ -167,15 +185,23 @@ def register_route(app, db, bcrypt):
             name = request.form['department_name']
             doctor_id = request.form['doctor_id']
 
+            existing_department = Department.query.filter_by(name = name).first()
+            
+            if existing_department:
+                return jsonify({'message': 'Department already exists. Please try with different name.'}), 400
+
+
             new_department = Department(
-                name=name,
-                doctor_id=doctor_id if doctor_id != "" else None
+                name = name,
+                doctor_id = doctor_id if doctor_id != "" else None
             )
 
-            db.session.add(new_department)
-            db.session.commit()
-
-            return redirect(url_for('dashboard'))
+            try:
+                db.session.add(new_department)
+                db.session.commit()
+                return redirect(url_for('dashboard'))
+            except:
+                return 'There was a problem with that task'
 
     @app.route('/delete/department/<int:id>')
     def delete_department(id):
@@ -215,6 +241,122 @@ def register_route(app, db, bcrypt):
             doctors = User.query.filter_by(role = 'doctor').all()
             return render_template('update_department.html', department=department, doctors = doctors)
 
+    # Doctors Availability
+    @app.route('/add_availability/<int:doctor_id>', methods=['POST', 'GET'])
+    def add_availability(doctor_id):
+        if request.method == 'GET':
+            return render_template('add_availability.html', doctor_id = doctor_id)
+        elif request.method == 'POST':
+            date = request.form['date']
+            start_time = request.form['start_time']
+            end_time = request.form['end_time']
+
+            date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+            start_time_obj = datetime.strptime(start_time, "%H:%M").time()
+            end_time_obj = datetime.strptime(end_time, "%H:%M").time()
+
+            existing_slots = Availability.query.filter_by(
+                doctor_id = doctor_id,
+                date = date_obj
+            ).all()
+
+            for slot in existing_slots:
+                if start_time_obj < slot.end_time and end_time_obj > slot.start_time:
+                    return f"Conflict: Existing slot {slot.start_time}-{slot.end_time}", 400
+
+            availability = Availability(
+                date = date_obj,
+                start_time = start_time_obj,
+                end_time = end_time_obj,
+                doctor_id = doctor_id if doctor_id != "" else None
+            )
+
+            try:
+                db.session.add(availability)
+                db.session.commit()
+                return redirect(url_for('dashboard'))
+            except:
+                return 'There was a problem deleting that task'
+            
+    @app.route('/delete/slot/<int:id>')
+    def delete_slot(id):
+        slot_to_delete = Availability.query.get_or_404(id)
+
+        try:
+            db.session.delete(slot_to_delete)
+            db.session.commit()
+            return redirect(url_for('dashboard'))
+        except:
+            return 'There was a problem deleting that task'
+        
+    # Members Appointment
+    @app.route('/add_appointment/<int:member_id>', methods=['POST', 'GET'])
+    def add_appointment(member_id):
+        if request.method == 'GET':
+            doctors = User.query.filter(User.role == 'doctor').all()
+            return render_template('add_appointment.html', member_id = member_id, doctors = doctors)
+        elif request.method == 'POST':
+            date = request.form['date']
+            doctor_id = request.form['doctor_id']
+            start_time = request.form['start_time']
+            end_time = request.form['end_time']
+
+            date_obj = datetime.strptime(date, "%Y-%m-%d").date()
+            start_time_obj = datetime.strptime(start_time, "%H:%M").time()
+            end_time_obj = datetime.strptime(end_time, "%H:%M").time()
+
+            existing_slots = Appointment.query.filter_by(
+                doctor_id = doctor_id,
+                date = date_obj
+            ).all()
+
+            for slot in existing_slots:
+                if start_time_obj < slot.end_time and end_time_obj > slot.start_time:
+                    return f"Conflict: Existing appointment in this slot {slot.start_time}-{slot.end_time}", 400
+    
+            existing_availability = Availability.query.filter_by(
+                doctor_id = doctor_id,
+                date = date_obj
+            ).all()
+
+            if not existing_availability:
+                return "Doctor has no availability on this date", 400
+            
+            fits_in_availability = False
+            for avail in existing_availability:
+                if start_time_obj >= avail.start_time and end_time_obj <= avail.end_time:
+                    fits_in_availability = True
+                    break
+
+            if not fits_in_availability:
+                return f"Appointment time {start_time_obj}-{end_time_obj} is outside doctor availability", 400
+
+            appointment = Appointment(
+                date = date_obj,
+                start_time = start_time_obj,
+                end_time = end_time_obj,
+                doctor_id = doctor_id if doctor_id != "" else None,
+                member_id = member_id if member_id != "" else None
+            )
+
+            try:
+                db.session.add(appointment)
+                db.session.commit()
+                return redirect(url_for('dashboard'))
+            except:
+                return 'There was a problem that task'
+
+    @app.route('/delete/appointment/<int:id>')
+    def delete_appointment(id):
+        slot_to_delete = Appointment.query.get_or_404(id)
+
+        try:
+            db.session.delete(slot_to_delete)
+            db.session.commit()
+            return redirect(url_for('dashboard'))
+        except:
+            return 'There was a problem deleting that task'
+         
     @app.route('/')
     def index():
         return render_template('index.html')

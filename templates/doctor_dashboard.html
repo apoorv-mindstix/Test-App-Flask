@@ -4,7 +4,76 @@
 
 {% block content %}
     
-    <h3> Hello Doctor, {{ current_user.name }}</h3>
+    <h3> Hello Doctor, {{ doctor.name }}</h3>
+
     <a href = "{{ url_for('logout')}}">logout</a>
 
+    <h1 style="text-align: start">Available Slots</h1>
+
+    {% if available_slots|length < 1 %}    
+
+    <p style="text-align: center">There are no Slots added. Create one below!</p>
+
+    {% else %}
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Delete</th>
+        </tr>
+
+        {% for slot in available_slots %}
+        <tr>
+            <td>{{ slot.uid }}</td>
+            <td>{{ slot.date }}</td>
+            <td>{{ slot.start_time }}</td>
+            <td>{{ slot.end_time }}</td>
+            <td><a href="/delete/slot/{{slot.uid}}">Delete</a><br></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% endif %}
+
+    <br>
+    <br>
+
+    <a href = "{{ url_for('add_availability', doctor_id=doctor.uid)}}">Add Availability</a><br><br>
+
+    <h1 style="text-align: start">Appointments</h1>
+
+    {% if appointments|length < 1 %}    
+
+    <p style="text-align: center">There are no appointments booked </p>
+
+    {% else %}
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Doctor</th>
+            <th>Member</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Delete</th>
+        </tr>
+
+        {% for slot in appointments %}
+        <tr>
+            <td>{{ slot.uid }}</td>
+            <td>{{ slot.date }}</td>
+            <td>{{ slot.doctor.name }}</td>
+            <td>{{ slot.member.name }}</td>
+            <td>{{ slot.start_time }}</td>
+            <td>{{ slot.end_time }}</td>
+            <td><a href="/delete/appointment/{{slot.uid}}">Delete</a><br></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    {% endif %}
 {% endblock %}
