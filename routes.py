@@ -5,7 +5,10 @@ from functools import wraps
 from sqlalchemy import func
 from datetime import datetime, timezone, timedelta
 
-from models import User, Department, Availability, Appointment, UserRole
+from models.User.user_model import User, UserRole
+from models.Department.department_model import Department
+from models.Availability.availability_model import Availability
+from models.Appointment.appointment_model import Appointment
 
 # def register_route(app, db):
 #     @app.route('/', methods=['POST', 'GET'])
