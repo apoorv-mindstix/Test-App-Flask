@@ -1,7 +1,8 @@
-from app import db
+from ...extension import db
 from flask_login import UserMixin
 from sqlalchemy import Enum
 import enum
+from datetime import datetime
 
 class UserRole(enum.Enum):
     ADMIN = "admin"
@@ -9,18 +10,19 @@ class UserRole(enum.Enum):
     MEMBER = "member"
 
 class User(db.Model, UserMixin):
-    __tablename__ = 'user'
-
-    uid = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    role = db.Column(
-        Enum(UserRole, name="user_role_enum"),
-        nullable=False
-    )
+    __tablename__ = "users"
+    id: int = db.Column(db.Integer, primary_key=True)
+    email: str = db.Column(db.String(200), nullable=False)
+    password_hash: str = db.Column(db.String(200), nullable=False)
+    # role: str = db.Column(
+    #     Enum(UserRole, name="user_role_enum"),
+    #     nullable=False
+    # )
+    role: str = db.Column(db.String(20), nullable=False, default=UserRole.MEMBER)
+    created_at: datetime = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'User with name {self.name} and role {self.role}'
-    
+        return f'User with name {self.email} and role {self.role} and pass {self.password_hash}'
+
     def get_id(self):
-        return self.uid
+        return self.id

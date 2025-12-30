@@ -28,7 +28,7 @@ from models.Appointment.appointment_model import Appointment
 #         else:
 #             persons = Person.query.all()
 #             return render_template('index.html', people = persons)
-
+"""
 def register_route(app, db, bcrypt):
 
     login_manager = LoginManager()
@@ -385,3 +385,4 @@ def register_route(app, db, bcrypt):
         else:
             user = User.query.all()
             return render_template('index.html', user = user)
+"""
